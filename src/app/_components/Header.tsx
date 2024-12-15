@@ -16,20 +16,15 @@ const Header: React.FC = () => {
           )}
         >
           <div>
-            <FontAwesomeIcon icon={faFish} className="mr-1" />
-            Header
+            <Link href="/">
+              <FontAwesomeIcon icon={faFish} className="mr-1" />
+              Header
+            </Link>
           </div>
-          <div>About</div>
+          <div>
+            <Link href="/about">About</Link>
+          </div>
         </div>
-      </div>
-      <div>
-        <Link href="/">
-          <FontAwesomeIcon icon={faFish} className="mr-1" />
-          Header
-        </Link>
-      </div>
-      <div>
-        <Link href="/about">About</Link>
       </div>
     </header>
   );
