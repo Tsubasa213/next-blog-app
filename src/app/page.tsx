@@ -1,29 +1,59 @@
 "use client";
 import { useState, useEffect } from "react";
 import type { Post } from "@/app/_types/Post";
+import type { PostApiResponse } from "@/app/_types/PostApiResponse";
 import PostSummary from "@/app/_components/PostSummary";
-import dummyPosts from "@/app/_mocks/dummyPosts";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import Link from "next/link";
 
 const Page: React.FC = () => {
-  // 投稿データを「状態」として管理 (初期値はnull)
   const [posts, setPosts] = useState<Post[] | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // コンポーネントが読み込まれたときに「1回だけ」実行する処理
   useEffect(() => {
-    // 本来はウェブAPIを叩いてデータを取得するが、まずはモックデータを使用
-    // (ネットからのデータ取得をシミュレートして１秒後にデータをセットする)
-    const timer = setTimeout(() => {
-      console.log("ウェブAPIからデータを取得しました (虚言)");
-      setPosts(dummyPosts);
-    }, 1000); // 1000ミリ秒 = 1秒
-
-    // データ取得の途中でページ遷移したときにタイマーを解除する処理
-    return () => clearTimeout(timer);
+    const fetchPosts = async () => {
+      try {
+        // microCMS から記事データを取得
+        const requestUrl = `/api/posts`;
+        const response = await fetch(requestUrl, {
+          method: "GET",
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          throw new Error("データの取得に失敗しました");
+        }
+        const postResponse: PostApiResponse[] = await response.json();
+        setPosts(
+          postResponse.map((rawPost) => ({
+            id: rawPost.id,
+            title: rawPost.title,
+            content: rawPost.content,
+            coverImage: {
+              url: rawPost.coverImageURL,
+              width: 1000,
+              height: 1000,
+            },
+            createdAt: rawPost.createdAt,
+            categories: rawPost.categories.map((category) => ({
+              id: category.category.id,
+              name: category.category.name,
+            })),
+          }))
+        );
+      } catch (e) {
+        setFetchError(
+          e instanceof Error ? e.message : "予期せぬエラーが発生しました"
+        );
+      }
+    };
+    fetchPosts();
   }, []);
 
-  // 投稿データが取得できるまでは「Loading...」を表示
+  if (fetchError) {
+    return <div>{fetchError}</div>;
+  }
+
   if (!posts) {
     return (
       <div className="text-gray-500">
@@ -33,10 +63,14 @@ const Page: React.FC = () => {
     );
   }
 
-  // 投稿データが取得できたら「投稿記事の一覧」を出力
   return (
     <main>
-      <div className="mb-2 text-2xl font-bold">Main</div>
+      <div className="text-2xl font-bold">投稿記事一覧</div>
+      <div className="mb-1 flex justify-end">
+        <Link href="/admin" className="text-blue-500 underline">
+          管理者機能
+        </Link>
+      </div>
       <div className="space-y-3">
         {posts.map((post) => (
           <PostSummary key={post.id} post={post} />
@@ -47,3 +81,131 @@ const Page: React.FC = () => {
 };
 
 export default Page;
+
+// "use client";
+// import { useState, useEffect } from "react";
+// import type { Post } from "@/app/_types/Post";
+// import PostSummary from "@/app/_components/PostSummary";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+
+// const Page: React.FC = () => {
+//   const [posts, setPosts] = useState<Post[] | null>(null);
+//   const [fetchError, setFetchError] = useState<string | null>(null);
+
+//   useEffect(() => {
+//     const fetchPosts = async () => {
+//       try {
+//         const requestUrl = "https://w1980.blob.core.windows.net/pg3/posts.json";
+//         const response = await fetch(requestUrl, {
+//           method: "GET",
+//           cache: "no-store", // キャッシュを利用しない
+//         });
+//         if (!response.ok) {
+//           throw new Error("データの取得に失敗しました");
+//         }
+//         const data = (await response.json()) as Post[];
+//         setPosts(data);
+//       } catch (e) {
+//         setFetchError(
+//           e instanceof Error ? e.message : "予期せぬエラーが発生しました"
+//         );
+//       }
+//     };
+//     fetchPosts();
+//   }, []);
+
+//   if (fetchError) {
+//     return <div>{fetchError}</div>;
+//   }
+
+//   if (!posts) {
+//     return (
+//       <div className="text-gray-500">
+//         <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
+//         Loading...
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <main>
+//       <div className="mb-2 text-2xl font-bold">Main</div>
+//       <div className="space-y-3">
+//         {posts.map((post) => (
+//           <PostSummary key={post.id} post={post} />
+//         ))}
+//       </div>
+//     </main>
+//   );
+// };
+
+// export default Page;
+
+// "use client";
+// import { useState, useEffect } from "react";
+// import type { Post } from "@/app/_types/Post";
+// import PostSummary from "@/app/_components/PostSummary";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+
+// const Page: React.FC = () => {
+//   const [posts, setPosts] = useState<Post[] | null>(null);
+//   const [fetchError, setFetchError] = useState<string | null>(null);
+
+//   // 環境変数から API キーとエンドポイントを取得
+//   const apiBaseEp = process.env.NEXT_PUBLIC_MICROCMS_BASE_EP!;
+//   const apiKey = process.env.NEXT_PUBLIC_MICROCMS_API_KEY!;
+
+//   useEffect(() => {
+//     const fetchPosts = async () => {
+//       try {
+//         // microCMS から記事データを取得
+//         const requestUrl = `${apiBaseEp}/posts`;
+//         const response = await fetch(requestUrl, {
+//           method: "GET",
+//           cache: "no-store",
+//           headers: {
+//             "X-MICROCMS-API-KEY": apiKey,
+//           },
+//         });
+//         if (!response.ok) {
+//           throw new Error("データの取得に失敗しました");
+//         }
+//         const data = await response.json();
+//         setPosts(data.contents as Post[]);
+//       } catch (e) {
+//         setFetchError(
+//           e instanceof Error ? e.message : "予期せぬエラーが発生しました"
+//         );
+//       }
+//     };
+//     fetchPosts();
+//   }, [apiBaseEp, apiKey]);
+
+//   if (fetchError) {
+//     return <div>{fetchError}</div>;
+//   }
+
+//   if (!posts) {
+//     return (
+//       <div className="text-gray-500">
+//         <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
+//         Loading...
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <main>
+//       <div className="mb-2 text-2xl font-bold">Main</div>
+//       <div className="space-y-3">
+//         {posts.map((post) => (
+//           <PostSummary key={post.id} post={post} />
+//         ))}
+//       </div>
+//     </main>
+//   );
+// };
+
+// export default Page;
