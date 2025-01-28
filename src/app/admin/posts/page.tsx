@@ -7,12 +7,17 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
+import { useAuth } from "@/app/_hooks/useAuth";
+import { supabase } from "@/utils/supabase";
 
 const Page: React.FC = () => {
+  const { token } = useAuth();
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [filteredPosts, setFilteredPosts] = useState<Post[] | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>([]); // 選択されたカテゴリ
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -41,7 +46,7 @@ const Page: React.FC = () => {
         })),
       }));
       setPosts(postsData);
-      setFilteredPosts(postsData); // 初期状態ではすべて表示
+      setFilteredPosts(postsData);
     } catch (e) {
       setFetchError(
         e instanceof Error ? e.message : "予期せぬエラーが発生しました"
@@ -52,6 +57,43 @@ const Page: React.FC = () => {
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  const handleDeletePost = async (postId: string) => {
+    setIsSubmitting(true);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("認証エラー: アクセストークンが見つかりません");
+      }
+
+      const response = await fetch(`/api/posts?id=${postId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "投稿の削除に失敗しました");
+      }
+
+      // 削除成功後、投稿一覧を再取得
+      await fetchPosts();
+    } catch (error) {
+      console.error("削除エラー:", error);
+      alert(
+        error instanceof Error ? error.message : "削除中にエラーが発生しました"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleCategoryChange = (selectedCategory: string) => {
     setCategories((prevCategories) => {
@@ -135,7 +177,8 @@ const Page: React.FC = () => {
               key={post.id}
               post={post}
               reloadAction={fetchPosts}
-              setIsSubmitting={() => {}}
+              setIsSubmitting={setIsSubmitting} // 修正
+              onDeletePost={handleDeletePost} // 追加
             />
           ))
         ) : (

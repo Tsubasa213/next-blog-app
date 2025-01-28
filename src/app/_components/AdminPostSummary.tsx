@@ -10,6 +10,7 @@ type Props = {
   post: Post;
   reloadAction: () => Promise<void>;
   setIsSubmitting: (isSubmitting: boolean) => void;
+  onDeletePost?: (postId: string) => Promise<void>; // オプショナルに追加
 };
 
 const AdminPostSummary: React.FC<Props> = (props) => {

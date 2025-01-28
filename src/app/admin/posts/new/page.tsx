@@ -1,32 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "@/app/_hooks/useAuth";
 
 // カテゴリをフェッチしたときのレスポンスのデータ型
-type RawApiCategoryResponse = {
+type CategoryApiResponse = {
   id: string;
   name: string;
   createdAt: string;
   updatedAt: string;
-};
-
-// 投稿記事をフェッチしたときのレスポンスのデータ型
-type PostApiResponse = {
-  id: string;
-  title: string;
-  content: string;
-  coverImageURL: string;
-  createdAt: string;
-  categories: {
-    category: {
-      id: string;
-      name: string;
-    };
-  }[];
 };
 
 // 投稿記事のカテゴリ選択用のデータ型
@@ -36,72 +21,45 @@ type SelectableCategory = {
   isSelect: boolean;
 };
 
-// 投稿記事の編集ページ
+// 投稿記事の新規作成のページ
 const Page: React.FC = () => {
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
 
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [newCoverImageURL, setNewCoverImageURL] = useState("");
-
-  const { id } = useParams() as { id: string };
-  const router = useRouter();
-
   const { token } = useAuth();
+  const router = useRouter();
 
   // カテゴリ配列 (State)。取得中と取得失敗時は null、既存カテゴリが0個なら []
   const [checkableCategories, setCheckableCategories] = useState<
     SelectableCategory[] | null
   >(null);
 
-  // 編集前の投稿記事のデータ (State)
-  const [rawApiPostResponse, setRawApiPostResponse] =
-    useState<PostApiResponse | null>(null);
-
-  // 投稿記事の取得
+  // コンポーネントがマウントされたとき (初回レンダリングのとき) に1回だけ実行
   useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        const requestUrl = `/api/posts/${id}`;
-        const res = await fetch(requestUrl, {
-          method: "GET",
-          cache: "no-store",
-        });
-        if (!res.ok) {
-          setRawApiPostResponse(null);
-          throw new Error(`${res.status}: ${res.statusText}`);
-        }
-        const apiResBody = (await res.json()) as PostApiResponse;
-        setRawApiPostResponse(apiResBody);
-      } catch (error) {
-        const errorMsg =
-          error instanceof Error
-            ? `投稿記事の取得に失敗しました: ${error.message}`
-            : `予期せぬエラーが発生しました ${error}`;
-        console.error(errorMsg);
-        setFetchErrorMsg(errorMsg);
-      }
-    };
-
-    fetchPost();
-  }, [id]);
-
-  // カテゴリの一覧の取得
-  useEffect(() => {
+    // ウェブAPI (/api/categories) からカテゴリの一覧をフェッチする関数の定義
     const fetchCategories = async () => {
       try {
+        setIsLoading(true);
+
+        // フェッチ処理の本体
         const requestUrl = "/api/categories";
         const res = await fetch(requestUrl, {
           method: "GET",
           cache: "no-store",
         });
+
+        // レスポンスのステータスコードが200以外の場合 (カテゴリのフェッチに失敗した場合)
         if (!res.ok) {
           setCheckableCategories(null);
-          throw new Error(`${res.status}: ${res.statusText}`);
+          throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
         }
-        const apiResBody = (await res.json()) as RawApiCategoryResponse[];
+
+        // レスポンスのボディをJSONとして読み取りカテゴリ配列 (State) にセット
+        const apiResBody = (await res.json()) as CategoryApiResponse[];
         setCheckableCategories(
           apiResBody.map((body) => ({
             id: body.id,
@@ -116,36 +74,14 @@ const Page: React.FC = () => {
             : `予期せぬエラーが発生しました ${error}`;
         console.error(errorMsg);
         setFetchErrorMsg(errorMsg);
+      } finally {
+        // 成功した場合も失敗した場合もローディング状態を解除
+        setIsLoading(false);
       }
     };
+
     fetchCategories();
   }, []);
-
-  // 投稿記事のデータが取得できたらカテゴリの選択状態を更新する
-  useEffect(() => {
-    // 初期化済みなら戻る
-    if (isInitialized) return;
-
-    // 投稿記事 または カテゴリ一覧 が取得できていないなら戻る
-    if (!rawApiPostResponse || !checkableCategories) return;
-
-    // 投稿記事のタイトル、本文、カバーイメージURLを更新
-    setNewTitle(rawApiPostResponse.title);
-    setNewContent(rawApiPostResponse.content);
-    setNewCoverImageURL(rawApiPostResponse.coverImageURL);
-
-    // カテゴリの選択状態を更新
-    const selectedIds = new Set(
-      rawApiPostResponse.categories.map((c) => c.category.id)
-    );
-    setCheckableCategories(
-      checkableCategories.map((category) => ({
-        ...category,
-        isSelect: selectedIds.has(category.id),
-      }))
-    );
-    setIsInitialized(true);
-  }, [isInitialized, rawApiPostResponse, checkableCategories]);
 
   // チェックボックスの状態 (State) を更新する関数
   const switchCategoryState = (categoryId: string) => {
@@ -181,7 +117,7 @@ const Page: React.FC = () => {
 
     setIsSubmitting(true);
 
-    // ▼▼ 追加 ウェブAPI (/api/admin/posts/[id]) にPUTリクエストを送信する処理
+    // ▼▼ 追加 ウェブAPI (/api/admin/posts) にPOSTリクエストを送信する処理
     try {
       const requestBody = {
         title: newTitle,
@@ -195,14 +131,15 @@ const Page: React.FC = () => {
         window.alert("予期せぬ動作：トークンが取得できません。");
         return;
       }
-      const requestUrl = `/api/admin/posts/${id}`;
+
+      const requestUrl = "/api/admin/posts";
       console.log(`${requestUrl} => ${JSON.stringify(requestBody, null, 2)}`);
       const res = await fetch(requestUrl, {
-        method: "PUT",
+        method: "POST",
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token,
+          Authorization: token, // ◀ 追加
         },
         body: JSON.stringify(requestBody),
       });
@@ -211,9 +148,9 @@ const Page: React.FC = () => {
         throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
       }
 
-      // トップページに遷移
+      const postResponse = await res.json();
       setIsSubmitting(false);
-      router.push("/");
+      router.push(`/posts/${postResponse.id}`); // 投稿記事の詳細ページに移動
     } catch (error) {
       const errorMsg =
         error instanceof Error
@@ -225,11 +162,7 @@ const Page: React.FC = () => {
     }
   };
 
-  if (fetchErrorMsg) {
-    return <div className="text-red-500">{fetchErrorMsg}</div>;
-  }
-
-  if (!isInitialized) {
+  if (isLoading) {
     return (
       <div className="text-gray-500">
         <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
@@ -238,9 +171,13 @@ const Page: React.FC = () => {
     );
   }
 
+  if (!checkableCategories) {
+    return <div className="text-red-500">{fetchErrorMsg}</div>;
+  }
+
   return (
     <main>
-      <div className="mb-4 text-2xl font-bold">投稿記事の編集・削除</div>
+      <div className="mb-4 text-2xl font-bold">投稿記事の新規作成</div>
 
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -308,8 +245,8 @@ const Page: React.FC = () => {
         <div className="space-y-1">
           <div className="font-bold">タグ</div>
           <div className="flex flex-wrap gap-x-3.5">
-            {checkableCategories!.length > 0 ? (
-              checkableCategories!.map((c) => (
+            {checkableCategories.length > 0 ? (
+              checkableCategories.map((c) => (
                 <label key={c.id} className="flex space-x-1">
                   <input
                     id={c.id}
@@ -327,7 +264,7 @@ const Page: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex justify-end space-x-2">
+        <div className="flex justify-end">
           <button
             type="submit"
             className={twMerge(
@@ -337,18 +274,7 @@ const Page: React.FC = () => {
             )}
             disabled={isSubmitting}
           >
-            記事を更新
-          </button>
-
-          <button
-            type="button"
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-red-500 text-white hover:bg-red-600"
-            )}
-            // onClick={handleDelete}
-          >
-            削除
+            記事を投稿
           </button>
         </div>
       </form>
