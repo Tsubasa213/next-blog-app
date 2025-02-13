@@ -1,35 +1,51 @@
 import prisma from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { Post } from "@prisma/client";
-// 省略
-import { supabase } from "@/utils/supabase"; // ◀ 追加
+import { supabase } from "@/utils/supabase";
 
-type RequestBody = {
+interface RequestBody {
   title: string;
   content: string;
   coverImageURL: string;
   categoryIds: string[];
-};
+}
 
 export async function DELETE(req: NextRequest) {
-  const token = req.headers.get("Authorization") ?? "";
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 401 });
-  }
-
-  // URLからpostIdを取得
-  const url = new URL(req.url);
-  const postId = url.searchParams.get("id");
-
-  if (!postId) {
-    return NextResponse.json(
-      { error: "投稿IDが指定されていません" },
-      { status: 400 }
-    );
-  }
-
   try {
+    // Authorization ヘッダーから Bearer トークンを取得
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "認証トークンが必要です" },
+        { status: 401 }
+      );
+    }
+
+    // "Bearer "の部分を除いてトークンを取得
+    const token = authHeader.substring(7);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return NextResponse.json(
+        { error: "認証に失敗しました" },
+        { status: 401 }
+      );
+    }
+
+    // URLからpostIdを取得
+    const url = new URL(req.url);
+    const postId = url.searchParams.get("id");
+
+    if (!postId) {
+      return NextResponse.json(
+        { error: "投稿IDが指定されていません" },
+        { status: 400 }
+      );
+    }
+
     // まず投稿が存在するか確認
     const post = await prisma.post.findUnique({
       where: { id: postId },

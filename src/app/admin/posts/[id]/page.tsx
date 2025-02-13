@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "@/app/_hooks/useAuth";
+import { supabase } from "@/utils/supabase";
 
 // カテゴリをフェッチしたときのレスポンスのデータ型
 type RawApiCategoryResponse = {
@@ -173,6 +174,54 @@ const Page: React.FC = () => {
   const updateNewCoverImageURL = (e: React.ChangeEvent<HTMLInputElement>) => {
     // ここにカバーイメージURLのバリデーション処理を追加する
     setNewCoverImageURL(e.target.value);
+  };
+
+  // 投稿の削除処理
+  const handleDelete = async (postId: string) => {
+    setIsSubmitting(true);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("認証エラー: アクセストークンが見つかりません");
+      }
+
+      // APIエンドポイントを修正
+      const response = await fetch(`/api/admin/posts?id=${postId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const contentType = response.headers.get("content-type");
+      let errorMessage = "投稿の削除に失敗しました";
+
+      if (!response.ok) {
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } else {
+          errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // 削除成功後、admin/postsのページに戻る
+      router.push("/admin/posts");
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Error) {
+        window.alert(error.message);
+      } else {
+        window.alert("予期せぬエラーが発生しました");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // フォームの送信処理
@@ -346,7 +395,9 @@ const Page: React.FC = () => {
               "rounded-md px-5 py-1 font-bold",
               "bg-red-500 text-white hover:bg-red-600"
             )}
-            // onClick={handleDelete}
+            onClick={() => {
+              handleDelete(id);
+            }}
           >
             削除
           </button>

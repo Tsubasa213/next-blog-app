@@ -5,49 +5,65 @@ import dayjs from "dayjs";
 import { twMerge } from "tailwind-merge";
 import DOMPurify from "isomorphic-dompurify";
 import Link from "next/link";
+import { supabase } from "@/utils/supabase";
 
 type Props = {
   post: Post;
   reloadAction: () => Promise<void>;
   setIsSubmitting: (isSubmitting: boolean) => void;
-  onDeletePost?: (postId: string) => Promise<void>; // オプショナルに追加
+  onDeletePost?: (postId: string) => Promise<void>;
 };
 
-const AdminPostSummary: React.FC<Props> = (props) => {
-  const { post } = props;
+const AdminPostSummary: React.FC<Props> = ({
+  post,
+  reloadAction,
+  setIsSubmitting,
+  onDeletePost,
+}) => {
   const dtFmt = "YYYY-MM-DD";
   const safeHTML = DOMPurify.sanitize(post.content, {
     ALLOWED_TAGS: ["b", "strong", "i", "em", "u", "br"],
   });
 
-  // 「削除」のボタンが押下されたときにコールされる関数
   const handleDelete = async (post: Post) => {
-    // prettier-ignore
     if (!window.confirm(`投稿記事「${post.title}」を本当に削除しますか？`)) {
       return;
     }
 
     try {
-      props.setIsSubmitting(true);
-      const requestUrl = `/api/admin/posts/${post.id}`;
+      setIsSubmitting(true);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("認証エラー: アクセストークンが見つかりません");
+      }
+
+      const requestUrl = `/api/admin/posts?id=${post.id}`;
       const res = await fetch(requestUrl, {
         method: "DELETE",
-        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || `${res.status}: ${res.statusText}`);
       }
-      await props.reloadAction();
+
+      await reloadAction();
     } catch (error) {
       const errorMsg =
         error instanceof Error
-          ? `投稿記事のDELETEリクエストに失敗しました\n${error.message}`
+          ? `投稿記事の削除に失敗しました\n${error.message}`
           : `予期せぬエラーが発生しました\n${error}`;
       console.error(errorMsg);
       window.alert(errorMsg);
     } finally {
-      props.setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 

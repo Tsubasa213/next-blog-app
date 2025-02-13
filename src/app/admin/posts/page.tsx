@@ -69,7 +69,8 @@ const Page: React.FC = () => {
         throw new Error("認証エラー: アクセストークンが見つかりません");
       }
 
-      const response = await fetch(`/api/posts?id=${postId}`, {
+      // APIエンドポイントを修正
+      const response = await fetch(`/api/admin/posts?id=${postId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -77,10 +78,17 @@ const Page: React.FC = () => {
         },
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type");
+      let errorMessage = "投稿の削除に失敗しました";
 
       if (!response.ok) {
-        throw new Error(data.error || "投稿の削除に失敗しました");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } else {
+          errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       // 削除成功後、投稿一覧を再取得
