@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { Category } from "@prisma/client"; // ◀ 型をインポート
 
+export const revalidate = 0;
+
 export const GET = async (req: NextRequest) => {
   try {
     // ▼ 型を明示している

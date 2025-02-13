@@ -7,6 +7,7 @@ type RouteParams = {
   };
 };
 
+export const revalidate = 0;
 export const GET = async (req: NextRequest, routeParams: RouteParams) => {
   try {
     // パラメータプレースホルダから id を取得

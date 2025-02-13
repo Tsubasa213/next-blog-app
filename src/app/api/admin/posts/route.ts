@@ -10,6 +10,8 @@ interface RequestBody {
   categoryIds: string[];
 }
 
+export const revalidate = 0;
+
 export async function DELETE(req: NextRequest) {
   try {
     // Authorization ヘッダーから Bearer トークンを取得

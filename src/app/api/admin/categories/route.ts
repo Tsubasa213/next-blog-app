@@ -6,6 +6,8 @@ type RequestBody = {
   name: string;
 };
 
+export const revalidate = 0;
+
 export const POST = async (req: NextRequest) => {
   try {
     const { name }: RequestBody = await req.json();
