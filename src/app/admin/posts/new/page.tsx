@@ -1,3 +1,5 @@
+// src/app/admin/posts/new/page.tsx
+
 "use client";
 import { useState, useEffect, ChangeEvent, useRef } from "react";
 import { useRouter } from "next/navigation";

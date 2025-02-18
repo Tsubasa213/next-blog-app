@@ -14,7 +14,7 @@ export default function Page() {
             "linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9))",
         }}
       >
-        <div className="absolute inset-0 -right-[200%] -top-[200%] size-[400%]">
+        <div className="absolute inset-0 right-[-200%] top-[-200%] size-[400%]">
           <div className="animate-diagonal-scroll absolute size-full">
             <div
               className="grid size-full"

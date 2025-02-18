@@ -1,26 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSpinner,
+  faFolder,
+  faChevronDown,
+} from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "@/app/_hooks/useAuth";
 import { supabase } from "@/utils/supabase";
+import CryptoJS from "crypto-js";
+import Image from "next/image";
 
-// カテゴリをフェッチしたときのレスポンスのデータ型
-type RawApiCategoryResponse = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-// 投稿記事をフェッチしたときのレスポンスのデータ型
 type PostApiResponse = {
   id: string;
   title: string;
   content: string;
-  coverImaupdateNewCoverImageKey: string;
+  coverImageKey: string;
   createdAt: string;
   categories: {
     category: {
@@ -30,14 +27,21 @@ type PostApiResponse = {
   }[];
 };
 
-// 投稿記事のカテゴリ選択用のデータ型
-type SelectableCategory = {
+type Folder = {
   id: string;
   name: string;
-  isSelect: boolean;
+  categories: Array<{
+    id: string;
+    name: string;
+  }>;
 };
 
-// 投稿記事の編集ページ
+const calculateMD5Hash = async (file: File): Promise<string> => {
+  const buffer = await file.arrayBuffer();
+  const wordArray = CryptoJS.lib.WordArray.create(buffer);
+  return CryptoJS.MD5(wordArray).toString();
+};
+
 const Page: React.FC = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,24 +49,18 @@ const Page: React.FC = () => {
 
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
-  const [
-    newCoverImaupdateNewCoverImageKey,
-    setNewCoverImaupdateNewCoverImageKey,
-  ] = useState("");
+  const bucketName = "cover_image";
+  const [coverImageUrl, setCoverImageUrl] = useState<string | undefined>();
+  const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
+  const hiddenFileInputRef = useRef<HTMLInputElement>(null);
 
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { token, session } = useAuth();
 
-  const { token } = useAuth();
-
-  // カテゴリ配列 (State)。取得中と取得失敗時は null、既存カテゴリが0個なら []
-  const [checkableCategories, setCheckableCategories] = useState<
-    SelectableCategory[] | null
-  >(null);
-
-  // 編集前の投稿記事のデータ (State)
-  const [rawApiPostResponse, setRawApiPostResponse] =
-    useState<PostApiResponse | null>(null);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [expandedFolders, setExpandedFolders] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   // 投稿記事の取得
   useEffect(() => {
@@ -74,11 +72,24 @@ const Page: React.FC = () => {
           cache: "no-store",
         });
         if (!res.ok) {
-          setRawApiPostResponse(null);
           throw new Error(`${res.status}: ${res.statusText}`);
         }
         const apiResBody = (await res.json()) as PostApiResponse;
-        setRawApiPostResponse(apiResBody);
+
+        setNewTitle(apiResBody.title);
+        setNewContent(apiResBody.content);
+        setCoverImageKey(apiResBody.coverImageKey);
+
+        if (apiResBody.coverImageKey) {
+          const publicUrlResult = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(apiResBody.coverImageKey);
+          setCoverImageUrl(publicUrlResult.data.publicUrl);
+        }
+
+        // カテゴリIDを設定
+        const categoryIds = apiResBody.categories.map((c) => c.category.id);
+        setSelectedCategories(categoryIds);
       } catch (error) {
         const errorMsg =
           error instanceof Error
@@ -92,27 +103,22 @@ const Page: React.FC = () => {
     fetchPost();
   }, [id]);
 
-  // カテゴリの一覧の取得
+  // フォルダとカテゴリの取得
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchFoldersAndCategories = async () => {
       try {
-        const requestUrl = "/api/categories";
-        const res = await fetch(requestUrl, {
+        const res = await fetch("/api/admin/folders", {
           method: "GET",
           cache: "no-store",
         });
+
         if (!res.ok) {
-          setCheckableCategories(null);
           throw new Error(`${res.status}: ${res.statusText}`);
         }
-        const apiResBody = (await res.json()) as RawApiCategoryResponse[];
-        setCheckableCategories(
-          apiResBody.map((body) => ({
-            id: body.id,
-            name: body.name,
-            isSelect: false,
-          }))
-        );
+
+        const foldersData = await res.json();
+        setFolders(foldersData);
+        setIsInitialized(true);
       } catch (error) {
         const errorMsg =
           error instanceof Error
@@ -122,63 +128,58 @@ const Page: React.FC = () => {
         setFetchErrorMsg(errorMsg);
       }
     };
-    fetchCategories();
+
+    fetchFoldersAndCategories();
   }, []);
 
-  // 投稿記事のデータが取得できたらカテゴリの選択状態を更新する
-  useEffect(() => {
-    // 初期化済みなら戻る
-    if (isInitialized) return;
-
-    // 投稿記事 または カテゴリ一覧 が取得できていないなら戻る
-    if (!rawApiPostResponse || !checkableCategories) return;
-
-    // 投稿記事のタイトル、本文、カバーイメージURLを更新
-    setNewTitle(rawApiPostResponse.title);
-    setNewContent(rawApiPostResponse.content);
-    setNewCoverImaupdateNewCoverImageKey(
-      rawApiPostResponse.coverImaupdateNewCoverImageKey
-    );
-
-    // カテゴリの選択状態を更新
-    const selectedIds = new Set(
-      rawApiPostResponse.categories.map((c) => c.category.id)
-    );
-    setCheckableCategories(
-      checkableCategories.map((category) => ({
-        ...category,
-        isSelect: selectedIds.has(category.id),
-      }))
-    );
-    setIsInitialized(true);
-  }, [isInitialized, rawApiPostResponse, checkableCategories]);
-
-  // チェックボックスの状態 (State) を更新する関数
-  const switchCategoryState = (categoryId: string) => {
-    if (!checkableCategories) return;
-
-    setCheckableCategories(
-      checkableCategories.map((category) =>
-        category.id === categoryId
-          ? { ...category, isSelect: !category.isSelect }
-          : category
-      )
+  const toggleFolder = (folderId: string) => {
+    setExpandedFolders((prev) =>
+      prev.includes(folderId)
+        ? prev.filter((id) => id !== folderId)
+        : [...prev, folderId]
     );
   };
 
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(categoryId)) {
+        return prev.filter((id) => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+
   const updateNewTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ここにタイトルのバリデーション処理を追加する
     setNewTitle(e.target.value);
   };
 
   const updateNewContent = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // ここに本文のバリデーション処理を追加する
     setNewContent(e.target.value);
   };
 
-  const updateNewCoverImageKey = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ここにカバーイメージURLのバリデーション処理を追加する
-    setNewCoverImaupdateNewCoverImageKey(e.target.value);
+  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    setCoverImageKey(undefined);
+
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    const fileHash = await calculateMD5Hash(file);
+    const path = `private/${fileHash}`;
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(path, file, { upsert: true });
+
+    if (error || !data) {
+      window.alert(`アップロードに失敗 ${error.message}`);
+      return;
+    }
+
+    setCoverImageKey(data.path);
+    const publicUrlResult = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(data.path);
+    setCoverImageUrl(publicUrlResult.data.publicUrl);
   };
 
   // 投稿の削除処理
@@ -193,7 +194,6 @@ const Page: React.FC = () => {
         throw new Error("認証エラー: アクセストークンが見つかりません");
       }
 
-      // APIエンドポイントを修正
       const response = await fetch(`/api/admin/posts?id=${postId}`, {
         method: "DELETE",
         headers: {
@@ -215,7 +215,6 @@ const Page: React.FC = () => {
         throw new Error(errorMessage);
       }
 
-      // 削除成功後、admin/postsのページに戻る
       router.push("/admin/posts");
     } catch (error) {
       console.error(error);
@@ -229,26 +228,23 @@ const Page: React.FC = () => {
     }
   };
 
-  // フォームの送信処理
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // この処理をしないとページがリロードされるので注意
+    e.preventDefault();
+
+    if (!token) {
+      window.alert("予期せぬ動作：トークンが取得できません。");
+      return;
+    }
 
     setIsSubmitting(true);
 
-    // ▼▼ 追加 ウェブAPI (/api/admin/posts/[id]) にPUTリクエストを送信する処理
     try {
       const requestBody = {
         title: newTitle,
         content: newContent,
-        coverImaupdateNewCoverImageKey: newCoverImaupdateNewCoverImageKey,
-        categoryIds: checkableCategories
-          ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
-          : [],
+        coverImageKey: coverImageKey,
+        categoryIds: selectedCategories,
       };
-      if (!token) {
-        window.alert("予期せぬ動作：トークンが取得できません。");
-        return;
-      }
       const requestUrl = `/api/admin/posts/${id}`;
       console.log(`${requestUrl} => ${JSON.stringify(requestBody, null, 2)}`);
       const res = await fetch(requestUrl, {
@@ -262,16 +258,15 @@ const Page: React.FC = () => {
       });
 
       if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
+        throw new Error(`${res.status}: ${res.statusText}`);
       }
 
-      // トップページに遷移
       setIsSubmitting(false);
-      router.push("/");
+      router.push("/admin/posts");
     } catch (error) {
       const errorMsg =
         error instanceof Error
-          ? `投稿記事のPOSTリクエストに失敗しました\n${error.message}`
+          ? `投稿記事の更新に失敗しました\n${error.message}`
           : `予期せぬエラーが発生しました\n${error}`;
       console.error(errorMsg);
       window.alert(errorMsg);
@@ -344,44 +339,116 @@ const Page: React.FC = () => {
         </div>
 
         <div className="space-y-1">
-          <label
-            htmlFor="coverImaupdateNewCoverImageKey"
-            className="block font-bold"
-          >
-            カバーイメージ (URL)
+          <label htmlFor="coverImageKey" className="block font-bold">
+            カバーイメージ
           </label>
           <input
-            type="url"
-            id="coverImaupdateNewCoverImageKey"
-            name="coverImaupdateNewCoverImageKey"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newCoverImaupdateNewCoverImageKey}
-            onChange={updateNewCoverImageKey}
-            placeholder="カバーイメージのURLを記入してください"
-            required
+            id="imgSelector"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            hidden={true}
+            ref={hiddenFileInputRef}
           />
+          <button
+            onClick={() => hiddenFileInputRef.current?.click()}
+            type="button"
+            className="rounded-md bg-indigo-500 px-3 py-1 text-white hover:bg-indigo-600"
+          >
+            ファイルを選択
+          </button>
+          {coverImageUrl && (
+            <div className="mt-2">
+              <Image
+                className="w-1/2 border-2 border-gray-300"
+                src={coverImageUrl}
+                alt="プレビュー画像"
+                width={1024}
+                height={1024}
+                priority
+              />
+            </div>
+          )}
         </div>
 
         <div className="space-y-1">
-          <div className="font-bold">タグ</div>
-          <div className="flex flex-wrap gap-x-3.5">
-            {checkableCategories!.length > 0 ? (
-              checkableCategories!.map((c) => (
-                <label key={c.id} className="flex space-x-1">
-                  <input
-                    id={c.id}
-                    type="checkbox"
-                    checked={c.isSelect}
-                    className="mt-0.5 cursor-pointer"
-                    onChange={() => switchCategoryState(c.id)}
+          <div className="font-bold">カテゴリ</div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {folders.map((folder) => (
+              <div
+                key={folder.id}
+                className="rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+              >
+                <button
+                  onClick={() => toggleFolder(folder.id)}
+                  className="flex w-full items-center justify-between p-3 hover:bg-gray-50"
+                  type="button"
+                >
+                  <div className="flex items-center">
+                    <FontAwesomeIcon
+                      icon={faFolder}
+                      className="mr-2 text-gray-500"
+                    />
+                    <span className="font-medium">{folder.name}</span>
+                  </div>
+                  <FontAwesomeIcon
+                    icon={faChevronDown}
+                    className={twMerge(
+                      "transition-transform duration-200",
+                      expandedFolders.includes(folder.id) ? "rotate-180" : ""
+                    )}
                   />
-                  <span className="cursor-pointer">{c.name}</span>
-                </label>
-              ))
-            ) : (
-              <div>選択可能なカテゴリが存在しません。</div>
-            )}
+                </button>
+                {expandedFolders.includes(folder.id) && (
+                  <div className="border-t border-gray-200 bg-gray-50 p-3">
+                    <div className="flex flex-wrap gap-2">
+                      {folder.categories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => handleCategoryChange(category.id)}
+                          type="button"
+                          className={twMerge(
+                            "rounded-full px-3 py-1 text-sm transition-all",
+                            selectedCategories.includes(category.id)
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-100 text-gray-800 hover:bg-gray-200",
+                            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                          )}
+                        >
+                          {category.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
+
+          {/* 選択されたカテゴリの表示部分 */}
+          {selectedCategories.length > 0 && (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-white p-3">
+              <div className="mb-2 text-sm text-gray-600">
+                選択中のカテゴリ:
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selectedCategories.map((categoryId) => {
+                  const category = folders
+                    .flatMap((f) => f.categories)
+                    .find((c) => c.id === categoryId);
+                  if (!category) return null;
+                  return (
+                    <span
+                      key={categoryId}
+                      className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800"
+                    >
+                      {category.name}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end space-x-2">
@@ -390,7 +457,7 @@ const Page: React.FC = () => {
             className={twMerge(
               "rounded-md px-5 py-1 font-bold",
               "bg-indigo-500 text-white hover:bg-indigo-600",
-              "disabled:cursor-not-allowed"
+              "disabled:cursor-not-allowed disabled:opacity-50"
             )}
             disabled={isSubmitting}
           >
@@ -403,9 +470,7 @@ const Page: React.FC = () => {
               "rounded-md px-5 py-1 font-bold",
               "bg-red-500 text-white hover:bg-red-600"
             )}
-            onClick={() => {
-              handleDelete(id);
-            }}
+            onClick={() => handleDelete(id)}
           >
             削除
           </button>
