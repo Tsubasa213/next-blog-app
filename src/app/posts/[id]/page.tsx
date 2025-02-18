@@ -37,7 +37,7 @@ const Page: React.FC = () => {
           title: postApiResponse.title,
           content: postApiResponse.content,
           coverImage: {
-            url: postApiResponse.coverImageURL,
+            url: postApiResponse.coverImageKey,
             width: 1000,
             height: 1000,
           },

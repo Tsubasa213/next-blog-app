@@ -2,7 +2,8 @@ export type PostApiResponse = {
   id: string;
   title: string;
   content: string;
-  coverImageURL: string;
+  // coverImageURL: string;
+  coverImageKey: string;
   createdAt: string;
   categories: {
     category: {

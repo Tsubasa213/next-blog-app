@@ -20,7 +20,7 @@ type PostApiResponse = {
   id: string;
   title: string;
   content: string;
-  coverImageURL: string;
+  coverImaupdateNewCoverImageKey: string;
   createdAt: string;
   categories: {
     category: {
@@ -45,7 +45,10 @@ const Page: React.FC = () => {
 
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
-  const [newCoverImageURL, setNewCoverImageURL] = useState("");
+  const [
+    newCoverImaupdateNewCoverImageKey,
+    setNewCoverImaupdateNewCoverImageKey,
+  ] = useState("");
 
   const { id } = useParams() as { id: string };
   const router = useRouter();
@@ -133,7 +136,9 @@ const Page: React.FC = () => {
     // 投稿記事のタイトル、本文、カバーイメージURLを更新
     setNewTitle(rawApiPostResponse.title);
     setNewContent(rawApiPostResponse.content);
-    setNewCoverImageURL(rawApiPostResponse.coverImageURL);
+    setNewCoverImaupdateNewCoverImageKey(
+      rawApiPostResponse.coverImaupdateNewCoverImageKey
+    );
 
     // カテゴリの選択状態を更新
     const selectedIds = new Set(
@@ -171,9 +176,9 @@ const Page: React.FC = () => {
     setNewContent(e.target.value);
   };
 
-  const updateNewCoverImageURL = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const updateNewCoverImageKey = (e: React.ChangeEvent<HTMLInputElement>) => {
     // ここにカバーイメージURLのバリデーション処理を追加する
-    setNewCoverImageURL(e.target.value);
+    setNewCoverImaupdateNewCoverImageKey(e.target.value);
   };
 
   // 投稿の削除処理
@@ -235,7 +240,7 @@ const Page: React.FC = () => {
       const requestBody = {
         title: newTitle,
         content: newContent,
-        coverImageURL: newCoverImageURL,
+        coverImaupdateNewCoverImageKey: newCoverImaupdateNewCoverImageKey,
         categoryIds: checkableCategories
           ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
           : [],
@@ -339,16 +344,19 @@ const Page: React.FC = () => {
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="coverImageURL" className="block font-bold">
+          <label
+            htmlFor="coverImaupdateNewCoverImageKey"
+            className="block font-bold"
+          >
             カバーイメージ (URL)
           </label>
           <input
             type="url"
-            id="coverImageURL"
-            name="coverImageURL"
+            id="coverImaupdateNewCoverImageKey"
+            name="coverImaupdateNewCoverImageKey"
             className="w-full rounded-md border-2 px-2 py-1"
-            value={newCoverImageURL}
-            onChange={updateNewCoverImageURL}
+            value={newCoverImaupdateNewCoverImageKey}
+            onChange={updateNewCoverImageKey}
             placeholder="カバーイメージのURLを記入してください"
             required
           />

@@ -30,7 +30,7 @@ const Page: React.FC = () => {
             title: rawPost.title,
             content: rawPost.content,
             coverImage: {
-              url: rawPost.coverImageURL,
+              url: rawPost.coverImageKey,
               width: 1000,
               height: 1000,
             },
