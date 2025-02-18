@@ -1,11 +1,4 @@
-// このファイルを更新したら...
-// 0. `npm run dev` や `npx prisma studio` を停止
-// 1. dev.db を削除
-// 2. npx prisma db push
-// 3. npx prisma generate
-// 4. npx prisma db seed
-
-
+// schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,31 +8,53 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-        
 
 // 投稿記事テーブル
 model Post {
-  id             String @id @default(uuid())
+  id             String         @id @default(uuid())
   title          String
   content        String
   coverImageKey  String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
   categories     PostCategory[]
+}
+
+model Folder {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  categories  Category[]
+  contents    FolderContent[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// フォルダの内容を保存するテーブル
+model FolderContent {
+  id        String   @id @default(uuid())
+  folderId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  folder    Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, content])
 }
 
 // カテゴリテーブル
 model Category {
-  id         String @id @default(uuid())
-  name       String @unique
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id         String         @id @default(uuid())
+  name       String         @unique
+  folderId   String
+  folder     Folder        @relation(fields: [folderId], references: [id])
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
   posts      PostCategory[]
 }
 
 // 投稿記事とカテゴリを紐づける中間テーブル
 model PostCategory {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   postId      String
   categoryId  String
   createdAt   DateTime @default(now())

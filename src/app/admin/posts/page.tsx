@@ -143,7 +143,7 @@ const Page: React.FC = () => {
     <main>
       <div className="mb-4 text-2xl font-bold">投稿記事の管理</div>
 
-      <div className="mb-4">
+      {/* <div className="mb-4">
         <label className="mb-2 block font-medium">カテゴリで絞り込み:</label>
         <div className="flex flex-wrap gap-2">
           {uniqueCategories.map((category) => (
@@ -161,7 +161,7 @@ const Page: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
+      </div> */}
 
       <div className="mb-3 flex items-end justify-end">
         <Link href="/admin/posts/new">
