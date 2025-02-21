@@ -140,28 +140,10 @@ const Page: React.FC = () => {
   );
 
   return (
-    <main>
-      <div className="mb-4 text-2xl font-bold">投稿記事の管理</div>
-
-      {/* <div className="mb-4">
-        <label className="mb-2 block font-medium">カテゴリで絞り込み:</label>
-        <div className="flex flex-wrap gap-2">
-          {uniqueCategories.map((category) => (
-            <button
-              key={category}
-              onClick={() => handleCategoryChange(category)}
-              className={twMerge(
-                "rounded border px-3 py-1",
-                categories.includes(category)
-                  ? "border-blue-500 bg-blue-500 text-white"
-                  : "border-gray-300 bg-white text-gray-800"
-              )}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-      </div> */}
+    <main className="relative z-20">
+      <div className="mb-4 rounded-lg bg-white p-4 text-2xl font-bold">
+        投稿記事の管理
+      </div>
 
       <div className="mb-3 flex items-end justify-end">
         <Link href="/admin/posts/new">
@@ -181,16 +163,19 @@ const Page: React.FC = () => {
       <div className="space-y-3">
         {filteredPosts && filteredPosts.length > 0 ? (
           filteredPosts.map((post) => (
-            <AdminPostSummary
-              key={post.id}
-              post={post}
-              reloadAction={fetchPosts}
-              setIsSubmitting={setIsSubmitting} // 修正
-              onDeletePost={handleDeletePost} // 追加
-            />
+            <div key={post.id} className="rounded-lg bg-white shadow-md">
+              <AdminPostSummary
+                post={post}
+                reloadAction={fetchPosts}
+                setIsSubmitting={setIsSubmitting}
+                onDeletePost={handleDeletePost}
+              />
+            </div>
           ))
         ) : (
-          <div className="text-gray-500">該当する投稿がありません。</div>
+          <div className="rounded-lg bg-white p-4 text-gray-500">
+            該当する投稿がありません。
+          </div>
         )}
       </div>
     </main>
