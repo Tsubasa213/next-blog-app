@@ -85,7 +85,7 @@ const Page: React.FC = () => {
 
         <div className="mt-6 flex justify-end">
           <Link
-            href="/testtest"
+            href="https://tsubasa213.github.io/portfolio/"
             className="flex items-center text-blue-600 transition-colors hover:text-blue-800"
           >
             portfolioへ
