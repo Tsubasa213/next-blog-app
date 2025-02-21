@@ -8,7 +8,7 @@ config.autoAddCss = false;
 import Header from "@/app/_components/Header";
 
 export const metadata: Metadata = {
-  title: "NextBlogApp",
+  title: "RAMEN-Blog",
   description: "Built to learn Next.js and modern web development.",
 };
 

@@ -11,12 +11,14 @@ datasource db {
 
 // 投稿記事テーブル
 model Post {
-  id             String         @id @default(uuid())
-  title          String
-  content        String
-  coverImageKey  String
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id            String   @id @default(cuid())
+  title         String
+  content       String
+  titleFont     String   @default("default")  // 追加
+  contentFont   String   @default("default")  // 追加
+  coverImageKey String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   categories     PostCategory[]
 }
 

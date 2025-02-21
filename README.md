@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ラーメンブログ
 
-## Getting Started
+地域のラーメン店舗やスポット情報を管理・共有できるブログシステムです。管理者が地域の店舗情報や写真を投稿し、カテゴリー別に整理して閲覧できる、シンプルで使いやすい情報共有プラットフォームを目指しています。
 
-First, run the development server:
+## 特徴と機能の説明
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 1. シンプルな記事管理システム
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- 店舗名、営業時間、電話番号などの基本情報を構造化して管理
+- カバー画像のアップロード機能
+- サニタイズされたHTML形式での本文内容の保存
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. カテゴリーベースの柔軟な記事管理
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 複数カテゴリーでの記事分類が可能
+- カテゴリーフィルタリング機能
+- 記事が存在しないカテゴリーの可視化
 
-## Learn More
+### 3. レスポンシブデザイン
 
-To learn more about Next.js, take a look at the following resources:
+- モバイルからデスクトップまで、様々な画面サイズに対応
+- Tailwind CSSを活用した一貫性のあるUI設計
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 使用技術 (技術スタック)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### システム構成図
 
-## Deploy on Vercel
+flowchart TB
+subgraph Client["クライアント"]
+Browser["ブラウザ"]
+end
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    subgraph Vercel["Vercel"]
+        direction TB
+        NextJS["Next.js App"]
+        API["API Routes"]
+    end
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+    subgraph Supabase["Supabase"]
+        direction TB
+        Database[(Database)]
+        Storage["Storage\n(画像ファイル)"]
+    end
+
+    Browser -->|"HTTPS"| NextJS
+    NextJS -->|"API Calls"| API
+    API -->|"CRUD Operations"| Database
+    API -->|"File Operations"| Storage
+
+    style Client fill:#f5f5f5,stroke:#333,stroke-width:2px
+    style Vercel fill:#f0f0f0,stroke:#333,stroke-width:2px
+    style Supabase fill:#e6f3ff,stroke:#333,stroke-width:2px
+    style Browser fill:#fff,stroke:#666
+    style NextJS fill:#fff,stroke:#666
+    style API fill:#fff,stroke:#666
+    style Database fill:#fff,stroke:#666
+    style Storage fill:#fff,stroke:#666
+
+### フロントエンド
+
+- TypeScript
+- Next.js (App Router)
+- Tailwind CSS
+- FontAwesome
+- DOMPurify (XSS対策)
+
+### バックエンド
+
+- Supabase
+  - データベース
+  - ストレージ (画像管理)
+
+### インフラ
+
+- Vercel
+
+## 開発期間・体制
+
+- 開発体制: 個人開発
+- 開発期間: 2024.12 ~ 2025.2（時間）
+
+## 工夫した点
+
+### 1. ユーザビリティ
+
+- カテゴリーフィルターのインタラクティブな操作性
+- 記事がないカテゴリーの視覚的な表示
+- ローディング状態の適切な表示
+
+### 2. パフォーマンス
+
+- 画像の最適化（Next.js Image component使用）
+
+## 既知の課題と今後の展望
+
+### 1. 機能拡張
+
+- ユーザー認証システムの実装
+- コメント機能の追加
+- 記事の検索機能
+
+### 2. UI/UX改善
+
+- 記事のソート機能
+- より詳細な店舗情報の入力フォーム
+- 地図との連携
+
+### 3. 技術的改善
+
+- テストの追加
+- エラーハンドリングの強化
+- SEO対策の実装
+
+このアプリケーションは、ラーメン情報の効率的な管理と共有を実現する基盤として、さらなる機能拡張と改善を継続的に行っていく予定です。
