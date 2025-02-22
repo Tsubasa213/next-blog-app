@@ -22,7 +22,12 @@
 - モバイル最適化されたフィルター機能
 
 <div align="center">
-  <img src ="./public/postview.png" width="100">
+  <img src ="./public/postview.png" width="800">
+  <p><em>図1: ラーメンブログのPCホーム画面</em></p>
+</div>
+<div align="center">
+  <img src ="./public/postview2.png" width="500">
+  <p><em>図1: ラーメンブログのスマホホーム画面</em></p>
 </div>
 
 ## 使用技術
