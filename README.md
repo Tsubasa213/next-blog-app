@@ -21,7 +21,7 @@
 - Tailwind CSSを活用した一貫性のあるUI設計
 - モバイル最適化されたフィルター機能
 
-<img crc ="postview.png" width="100">
+<img crc ="/public/images/postview.png" width="100">
 
 ## 使用技術
 
@@ -85,6 +85,7 @@ graph TB
 - 年代ごとのbestラーメンランキングの実装
 - タイトルや本文でのフォント変更
 - 地図との連携機能
+- 投稿記事一覧のページのUI/UXの強化
 
 ### 2. 技術的改善
 
