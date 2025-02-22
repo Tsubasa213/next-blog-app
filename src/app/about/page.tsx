@@ -64,9 +64,9 @@ const Page: React.FC = () => {
           <h2 className="text-lg font-semibold">スキル</h2>
         </div>
         <ul className="list-inside list-disc space-y-1 pl-4">
-          <li>プログラミング言語: TypeScript, JavaScript, Python</li>
+          <li>プログラミング言語: TypeScript, JavaScript, Python, C</li>
           <li>フレームワーク: Next.js, React, Tailwind CSS</li>
-          <li>開発ツール: Git, VS Code, Docker</li>
+          <li>開発ツール: Git, VS Code</li>
         </ul>
 
         <div className="flex items-center space-x-2">
@@ -80,7 +80,7 @@ const Page: React.FC = () => {
           <h2 className="text-lg font-semibold">将来の目標</h2>
         </div>
         <p>
-          技術の進化に常に適応しながら、ユーザーに価値を提供できる革新的なウェブアプリケーションを開発することを目指しています。また、技術コミュニティに貢献し、知識を共有していきたいと考えています。
+          技術の進化に常に適応しながら、ユーザーに価値を提供できる革新的なウェブアプリケーションを開発することを目指しています。
         </p>
 
         <div className="mt-6 flex justify-end">
