@@ -22,7 +22,7 @@
 - モバイル最適化されたフィルター機能
 
 <div align="center">
-  <img crc ="./public/postview.png" width="100">
+  <img src ="./public/postview.png" width="100">
 </div>
 
 ## 使用技術
