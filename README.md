@@ -26,8 +26,8 @@
   <p><em>図1: ラーメンブログのPCホーム画面</em></p>
 </div>
 <div align="center">
-  <img src ="./public/postview2.png" width="500">
-  <p><em>図1: ラーメンブログのスマホホーム画面</em></p>
+  <img src ="./public/postview2.png" width="300">
+  <p><em>図2: ラーメンブログのスマホホーム画面</em></p>
 </div>
 
 ## 使用技術
