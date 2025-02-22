@@ -23,11 +23,11 @@
 
 <div align="center">
   <img src ="./public/postview.png" width="800">
-  <p><em>図1: ラーメンブログのPCホーム画面</em></p>
+  <p><em>図1: PCホーム画面のカテゴリ</em></p>
 </div>
 <div align="center">
   <img src ="./public/postview2.png" width="300">
-  <p><em>図2: ラーメンブログのスマホホーム画面</em></p>
+  <p><em>図2: スマホホーム画面のカテゴリ</em></p>
 </div>
 
 ## 使用技術
