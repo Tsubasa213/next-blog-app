@@ -24,43 +24,14 @@
 ## 使用技術
 
 #### システム構成図
-
-flowchart TB
-subgraph Client["クライアント"]
-Browser["ブラウザ"]
-end
-
-subgraph Vercel["Vercel"]
-    direction TB
-    NextJS["Next.js 14\n(App Router)"]
-    APIRoutes["API Routes"]
-end
-
-subgraph Supabase["Supabase"]
-    direction TB
-    Auth["認証"]
-    Database[(PostgreSQL)]
-    Storage["Storage\n(画像ファイル)"]
-end
-
-Browser -->|"HTTPS"| NextJS
-NextJS -->|"Server Actions\nAPI Routes"| APIRoutes
-APIRoutes -->|"認証"| Auth
-APIRoutes -->|"CRUD"| Database
-APIRoutes -->|"ファイル操作"| Storage
-
-style Client fill:#f5f5f5,stroke:#333,stroke-width:2px
-style Vercel fill:#f0f0f0,stroke:#333,stroke-width:2px
-style Supabase fill:#e6f3ff,stroke:#333,stroke-width:2px
-style Browser fill:#fff,stroke:#666
-style NextJS fill:#fff,stroke:#666
-style APIRoutes fill:#fff,stroke:#666
-style Auth fill:#fff,stroke:#666
-style Database fill:#fff,stroke:#666
-style Storage fill:#fff,stroke:#666
-
-
-## 使用技術
+```mermaid
+graph TB
+    Client[クライアント] -->|Next.js 14| Frontend[フロントエンド]
+    Frontend -->|Realtime| Supabase[Supabase]
+    Frontend -->|REST API| Supabase
+    Supabase -->|Auth| Auth[認証]
+    Supabase -->|Data| DB[(PostgreSQL)]
+    Supabase -->|Storage| Storage[ファイルストレージ]
 
 ### フロントエンド
 - Next.js 14（App Router採用）
