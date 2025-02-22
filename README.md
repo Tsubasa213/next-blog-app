@@ -32,6 +32,8 @@ graph TB
     Supabase -->|Auth| Auth[認証]
     Supabase -->|Data| DB[(PostgreSQL)]
     Supabase -->|Storage| Storage[ファイルストレージ]
+```
+
 
 ### フロントエンド
 - Next.js 14（App Router採用）
