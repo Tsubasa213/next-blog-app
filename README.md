@@ -21,7 +21,7 @@
 - Tailwind CSSを活用した一貫性のあるUI設計
 - モバイル最適化されたフィルター機能
 
-<img crc ="/public/images/postview.png" width="100">
+<img crc ="images/postview.png" width="100">
 
 ## 使用技術
 
